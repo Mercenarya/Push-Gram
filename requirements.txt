@@ -1,2 +1,1 @@
 flet
-deep_translator
