@@ -1,1 +1,2 @@
 flet
+deep_translator
