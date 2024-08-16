@@ -3,10 +3,10 @@ import sqlite3
 from flet import View
 from deep_translator import GoogleTranslator
 import time
-from gtts import gTTS
-from playsound import playsound
+# from gtts import gTTS
+# from playsound import playsound
 import os
-from docx import Document
+import asyncio
 
 
 
@@ -18,8 +18,9 @@ cursor = db.cursor()
 #Test connection
 
 
-      
 
+
+        
 
 class Note(ft.Column):
     def __init__(self,Title,Text,Delete):
@@ -36,7 +37,8 @@ class Note(ft.Column):
                 ft.dropdown.Option("vietnamese"),
                 ft.dropdown.Option("english"),
                 ft.dropdown.Option("russian"),
-                ft.dropdown.Option("chinese (traditional)")
+                ft.dropdown.Option("chinese (traditional)"),
+                ft.dropdown.Option("french"),
             ],
             width=150,
             text_size=12,
@@ -45,11 +47,12 @@ class Note(ft.Column):
             color=ft.TextStyle(color="black"),
             bgcolor="grey"
         )
-        languages = ''' SELECT * FROM langs'''
-        cursor.execute(languages)
-        for obj in cursor.fetchall():
+
+        self.lans_dict = GoogleTranslator().get_supported_languages(as_dict=False)
+
+        for lang in self.lans_dict:
             self.Translator.options.append(
-                ft.dropdown.Option(f"{obj[1]}")
+                ft.dropdown.Option(f"{lang}")
             )
         
         
@@ -67,24 +70,6 @@ class Note(ft.Column):
             visible=False
         )
 
-    
-
-        self.Doc_title = ft.TextField(hint_text="Name")
-    
-        self.Saved_announcement = ft.SnackBar(
-            content= ft.Text(f"File {self.Doc_title.value} have saved")
-        )
-
-        self.Save_docx_dialog  =ft.AlertDialog(
-            modal=True,
-            title=ft.Text("Save Document"),
-            content=self.Doc_title,
-            actions=[
-                ft.TextButton("Save",on_click=self.Save_to_Docx),
-                ft.TextButton("Close",on_click=self.Close_save_docx)
-            ],
-            actions_alignment=ft.MainAxisAlignment.CENTER
-        )
 
         self.Display_title = ft.Text(value=self.title, color="white", size=20,weight="bold")
         self.Display_text = ft.Text(value=self.Text,color="white",size=15)
@@ -149,9 +134,9 @@ class Note(ft.Column):
             
         )
 
-        self.Save_docx = ft.ElevatedButton('Save docx',color="white",bgcolor="blue",on_click=self.Open_save_docx,visible=False)
 
-        
+
+
 
         self.Display_Note = ft.Container(
             ft.Column(
@@ -171,7 +156,7 @@ class Note(ft.Column):
             width=450,
             bgcolor="black",
             padding=20,
-            height=430,
+            height=450,
             border = ft.border.BorderSide(1,"grey"),
             border_radius=15
             
@@ -194,7 +179,7 @@ class Note(ft.Column):
             width=450,
             bgcolor="black",
             padding=20,
-            height=430,
+            height=450,
             visible=False,
             border = ft.border.BorderSide(1,"grey"),
             border_radius=15
@@ -226,8 +211,6 @@ class Note(ft.Column):
                             ft.Container(
                                 ft.Row(
                                     [
-
-                                        self.Save_docx,
                                         ft.ElevatedButton('Back',color="white",bgcolor="grey",on_click=self.Back_event_keyword),
                                     ],
                                     alignment=ft.MainAxisAlignment.CENTER
@@ -257,18 +240,7 @@ class Note(ft.Column):
         )
         
 
-        self.controls = [self.Display_Note, self.Edit_Note_text, self.Keyword_Search,self.Save_docx_dialog, self.Saved_announcement]
-    def Open_save_docx(self, e):
-        self.Save_docx_dialog.open = True
-        self.update()
-
-    def Close_save_docx(self, e):
-        self.Save_docx_dialog.open = False
-        self.update()
-
-    def Open_Saved_announ(self, e):
-        self.Saved_announcement.open = True
-        self.update()
+        self.controls = [self.Display_Note, self.Edit_Note_text, self.Keyword_Search]
 
     def Delete_note(self, e):
         
@@ -306,24 +278,10 @@ class Note(ft.Column):
         self.Keyword_Search.visible = True
         self.update()
 
-    def Save_to_Docx(self, e):
-        try:
-            
-            doc = Document()
-            doc.add_paragraph(f'{self.trans_text.value}\n{self.translated_text.value}')
-            doc.save(f"{self.Doc_title.value}.docx")
-            self.Close_save_docx(e)
-            self.Open_Saved_announ(e)
-            print("docx saved")
-        except Exception as error:
-            print(error)
-        self.update()
-
 
     def Keyword_trans(self, e):
         try:
             self.loading(e)
-            self.Save_docx.visible = True
             self.Progress.visible=False
             translation = GoogleTranslator(target=f"{self.Translator.value}")
             reavel = translation.translate(self.Edit_text.value)
@@ -370,9 +328,17 @@ class NotedApp(ft.Column):
 
         self.Note_title = ft.TextField(width=400,border_color="white",hint_text="Tittle...",
                                        color="white",hint_style=ft.TextStyle(color="white"))
-        self.Note_textField = ft.TextField(value="\n\n",width=400,border_color="white",hint_text="TextLine...",
+        self.Note_textField = ft.TextField(value="",width=400,border_color="black",hint_text="TextLine...",
                                            multiline=True,hint_style=ft.TextStyle(color="white"),
                                            min_lines=1,max_lines=4,color="white")
+        
+
+        self.Field_Pad = ft.Container(
+            self.Note_textField,
+            width=400,
+            height=140,
+            border=ft.border.all(1,"white")
+        )
         self.banner = ft.Row(
             [
                 ft.Text("copyright by russianb_0 - Cuu Vang Long Do Group Ⓒ",size=10,color="grey")
@@ -383,7 +349,7 @@ class NotedApp(ft.Column):
             [
                 self.banner
             ],
-            height=630,
+            height=650,
             scroll=ft.ScrollMode.HIDDEN
         )
 
@@ -400,8 +366,48 @@ class NotedApp(ft.Column):
             )
         db.commit()
 
+        self.Search_button = ft.IconButton(ft.icons.SEARCH,icon_color="white",)
+        
+        self.Search_field = ft.TextField(bgcolor=None,width=300,border_color="white",border_radius=30,prefix_icon=ft.icons.SEARCH,
+                                         color="white",on_change=self.Search_Result)
         
 
+        self.NoteSearchBar = ft.Container(
+                ft.Column(
+                    [
+                        
+                        ft.Row(
+                            [
+                                ft.IconButton(ft.icons.TELEGRAM,icon_color="white",on_click= None),
+                                ft.Text("PushGram",color="white",size=25,weight="bold"),
+                                ft.IconButton(ft.icons.POST_ADD,icon_color="white",on_click=self.Add_post)
+                                
+                            ],
+                            alignment="spaceBetween",
+                        ),
+                        ft.Row(
+                            [
+                                self.Search_field
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER
+                        )
+                    ]
+                ),
+                border_radius=ft.border_radius.vertical(
+                bottom=25
+            ),
+            bgcolor="black",
+            width=400,
+            height=59,
+            padding=10,
+            shadow= ft.BoxShadow(
+                blur_radius=3,
+                color="black",
+                blur_style=ft.ShadowBlurStyle.OUTER
+            ),
+            animate=ft.animation.Animation(1000, ft.AnimationCurve.BOUNCE_OUT),
+            visible=False
+        )
 
         self.NoteBar = ft.Container(
                 ft.Column(
@@ -409,16 +415,17 @@ class NotedApp(ft.Column):
                         
                         ft.Row(
                             [
-                                ft.Icon(name=ft.icons.BOOK,color="white"),
-                                ft.Text("TransGram",color="white",size=25,weight="bold"),
-                                ft.Icon(name=ft.icons.TRANSLATE,color="white")
+                                ft.IconButton(ft.icons.TELEGRAM,icon_color="white",on_click= self.Telegram_application ),
+                                ft.Text("PushGram",color="white",size=25,weight="bold"),
+                                ft.IconButton(ft.icons.SEARCH,icon_color="white",on_click=self.Search_post)
                                 
                             ],
                             alignment="spaceBetween",
                         ),
                         
                         self.Note_title,
-                        self.Note_textField,
+                        # self.Note_textField,
+                        self.Field_Pad,
                         ft.Row(
                             [
                                 ft.FloatingActionButton(
@@ -439,18 +446,20 @@ class NotedApp(ft.Column):
             ),
             bgcolor="black",
             width=400,
-            height=55,
+            height=59,
             padding=10,
             shadow= ft.BoxShadow(
                 blur_radius=3,
                 color="black",
                 blur_style=ft.ShadowBlurStyle.OUTER
             ),
-            animate=ft.animation.Animation(1000, ft.AnimationCurve.BOUNCE_OUT),  
+            animate=ft.animation.Animation(1000, ft.AnimationCurve.BOUNCE_OUT),
         )
 
         self.controls = [
             self.NoteBar,
+            self.NoteSearchBar,
+            
             ft.Row(
                 [
                     self.OpenNoteBar,
@@ -462,10 +471,38 @@ class NotedApp(ft.Column):
             
             
         ]
+        
+        self.Search_List = []
+        try:
+            cursor.execute("SELECT * FROM note")
+            for obj in cursor.fetchall():
+                self.Search_List.append(
+                    {"title":obj[0],"content":obj[1]}
+                )
+            print(self.Search_List)
+            db.commit()
+        except Exception as error:
+            print(error)
 
+    def Search_Result(self, e):
+        self.Note_list.controls.clear()
+        for part in self.Search_List:
+            if self.Search_field.value in part["title"] or self.Search_field.value in part["content"]:
+                self.Note_list.controls.append(
+                    Note(part['title'],part['content'], self.Delete_note)
+                )
+
+
+
+        self.update()
+
+    def Telegram_application(self, e):
+        self.url = "https://web.telegram.org/"
+        self.update()
     def Add_note(self, e):
         note = Note(self.Note_title.value,self.Note_textField.value, self.Delete_note)
-        
+        self.Search_List.append( {"title":self.Note_title.value,"content":self.Note_textField.value})
+        print(self.Search_List)
         index_tub = [self.Note_title.value, self.Note_textField.value]
         Query_index = '''INSERT INTO note (title, textiled) VALUES (?,?)'''
         try:
@@ -479,6 +516,24 @@ class NotedApp(ft.Column):
         self.Note_textField.value = "\n\n\n"
         self.update()
 
+    def Search_post(self,e):
+        self.NoteBar.visible = False
+        self.NoteSearchBar.visible = True
+        self.update()
+
+    def Add_post(self,e):
+        self.NoteBar.visible = True
+        self.NoteSearchBar.visible = False
+        self.Note_list.controls.clear()
+        cursor.execute("SELECT * FROM note")
+        for objn in cursor.fetchall():
+            self.Note_list.controls.append(
+                Note(objn[0],objn[1],self.Delete_note)
+            )
+        db.commit()
+        self.update()
+
+
     def Delete_note(self, note):
         self.Note_list.controls.remove(note)
         self.update()
@@ -491,14 +546,19 @@ class NotedApp(ft.Column):
     def Note_TopBar_Open(self, e):
         self.OpenNoteBar.visible = False
         self.CloseNoteBar.visible = True
-        self.NoteBar.height = 350 if self.NoteBar.height == 55 else 55
+        self.NoteSearchBar.height = 150 if self.NoteSearchBar.height == 59 else 59
+        self.NoteBar.height = 350 if self.NoteBar.height == 59 else 59
         self.update()
 
     def Note_TopBar_close(self, e):
         self.OpenNoteBar.visible = True
         self.CloseNoteBar.visible = False
-        self.NoteBar.height = 55 if self.NoteBar.height == 350 else 350
+        self.NoteSearchBar.height = 59 if self.NoteSearchBar.height == 150 else 150
+        self.NoteBar.height = 59 if self.NoteBar.height == 350 else 350
         self.update()
+    
+
+    
 
 
 def main(page:ft.Page):
@@ -519,26 +579,22 @@ def main(page:ft.Page):
             ft.NavigationDestination(icon=ft.icons.SETTINGS, label="Settings"),
         ],
     )
-    
 
 
     
     #SETTINGS CUSTOMIZE AND ELEMENTS
     def Reload_app(e):
-        print("clicked")
-        Wordlist.controls.clear()
-        page.clean()  # Clear the page
-        main(page)
-        page.window_close()
+        # Clear the page
+        Syncho(e)
         page.update()
-
+    def Syncho(e):
+        print("Update")
+        page.clean()
+        # asyncio.run(Upload_language(e))
+        page.go("/Home")
+        print("Complete")
+        page.update()
     #Annoucement
-    def Open_langs_annoucement(e):
-        new_lans_anounce.open = True
-        page.update()
-    def Open_deleted_lans_announcement(e):
-        deleted_langs_anounce.open = True
-        page.update()
     def Open_deleted_text_announcement(e):
         deleted_text_anounce.open = True
         page.update()
@@ -547,61 +603,22 @@ def main(page:ft.Page):
         deleted_word_anounce.open = True
         page.update()
     #Interacting functions 
-    def Open_language_setting_layout(e):
-        open_language_button.visible = False
-        close_language_button.visible = True
-        Language_field.visible = True
-        Submit_Result.visible = True
-        Language_layout.height = 200
-        page.update()
-    
-    def close_language_setting_layout(e):
-        open_language_button.visible = True
-        close_language_button.visible = False
-        Language_field.visible = False
-        Submit_Result.visible = False
-        Language_layout.height = 80
-        page.update()
-    def Upload_language(e):
-        try:
-            new_lans = [Language_field.value.lower()]
-            cursor.execute('INSERT INTO langs (lans) VALUES (?)',new_lans)
-            print("new language upload")
-            
-            Open_langs_annoucement(e)
-            
-            db.commit()
-        except sqlite3.Error as error:
-            print(error)
-        page.update()
-
-    def Deleted_language(e):
-        try:
-            cursor.execute('DELETE FROM langs')
-            db.commit()
-            
-            Open_deleted_lans_announcement(e)
-            
-        except sqlite3.Error as error:
-            print(error)
-        page.update()
-
     def Deleted_Text(e):
+        Open_deleted_text_announcement(e)
         try:
             cursor.execute('DELETE FROM note')
             db.commit()
-           
-            Open_deleted_text_announcement(e)
+            
             
         except sqlite3.Error as error:
             print(error)
         page.update()
     def Deleted_Word(e):
+        Open_deleted_word_announcement(e)
         try:
             cursor.execute('DELETE FROM word')
             db.commit()
-           
-            Open_deleted_word_announcement(e)
+            
             
         except sqlite3.Error as error:
             print(error)
@@ -637,7 +654,7 @@ def main(page:ft.Page):
     def Open_storage_setting_layout(e):
         open_storage_button.visible = False
         close_storage_button.visible = True
-        Storage_layout.height = 250
+        Storage_layout.height = 200
         page.update()
     
     def close_storage_setting_layout(e):
@@ -652,13 +669,9 @@ def main(page:ft.Page):
 
 
     #Update Language Elements - controls - selection - input
-    Language_field = ft.TextField(hint_text="New Language",hint_style=ft.TextStyle(color="white"),
-                                  color="white",
-                                  border_color="white",visible=False)
-    Submit_Result = ft.ElevatedButton("Update",color="white",bgcolor="grey",
-                                      width=100,visible=False,on_click=Upload_language)
+    
     #Update Storage - button - controls
-    Delete_language = ft.IconButton(ft.icons.DELETE,icon_color="red",on_click=Deleted_language)
+    
     Delete_Context = ft.IconButton(ft.icons.DELETE,icon_color="red",on_click=Deleted_Text)
     Delete_dictionary = ft.IconButton(ft.icons.DELETE,icon_color="red",on_click=Deleted_Word)
 
@@ -666,13 +679,6 @@ def main(page:ft.Page):
 
     #User's interact with button - select options - controls
     #button - language's Selection
-    open_language_button = ft. IconButton(ft.icons.ARROW_RIGHT,visible=True,
-                                          icon_color="white",icon_size=30,
-                                          on_click=Open_language_setting_layout)
-    
-    close_language_button = ft. IconButton(ft.icons.ARROW_LEFT,visible=False,
-                                           icon_color="white",icon_size=30,
-                                           on_click=close_language_setting_layout)
     
 
     #button - theme's Selection
@@ -695,45 +701,22 @@ def main(page:ft.Page):
 
     
     new_lans_anounce = ft.SnackBar(
-        content=ft.Text("New language uploaded, press 'Update' to restart your app")
+        content=ft.Text("New language uploaded, press 'Refresh'")
     )
 
     deleted_langs_anounce = ft.SnackBar(
-        content=ft.Text("all uploaded languages deleted, press 'Update' to restart your app")
+        content=ft.Text("all uploaded languages deleted, press 'Refresh'")
     )
     deleted_text_anounce = ft.SnackBar(
-        content=ft.Text("all text deleted, press 'Update' to restart your app")
+        content=ft.Text("all text deleted, press 'Refresh'")
     )
     deleted_word_anounce = ft.SnackBar(
-        content=ft.Text("Dictionary deleted, press 'Update' to restart your app")
+        content=ft.Text("Dictionary deleted, press 'Refresh'")
     )
     
     
     #container - language's Selection
-    Language_layout = ft.Container(
-        ft.Column(
-            [
-                ft.Row(
-                    [
-                        ft.Text("Language's update", weight="bold",color="white"),
-                        open_language_button,
-                        close_language_button,
-                        
-                        
-                    ],
-                    alignment="spacebetween"
-                ),
-                Language_field,
-                Submit_Result
-            ]
-        ),
-        height=80,
-        width=450,
-        bgcolor="black",
-        border_radius=20,
-        padding=15,
-        animate=ft.animation.Animation(1000, ft.AnimationCurve.BOUNCE_OUT), 
-    )
+    
     #container - Theme's Selection
     Theme_layout = ft.Container(
         ft.Column(
@@ -774,13 +757,6 @@ def main(page:ft.Page):
                 ),
                 ft.Row(
                     [
-                        ft.Text("Delete all languages",color="white"),
-                        Delete_language
-                    ],
-                    alignment="spacebetween"
-                ),
-                ft.Row(
-                    [
                         ft.Text("Delete all text",color="white"),
                         Delete_Context
                     ],
@@ -806,11 +782,10 @@ def main(page:ft.Page):
     Reboot_layout = ft.Container(
         ft.Row(
             [
-                ft.Column(
+                ft.Row(
                     [
-                        ft.Text("Update",color="white",weight="bold"),
-                        ft.Text("Shut down and start updating, then open App again",
-                                color="white",size=10),
+                        ft.Text("Refresh",color="white",weight="bold"),
+                        
                     ]
                 ),
                 ft.IconButton(ft.icons.RESTART_ALT,icon_color="white",on_click=Reload_app)
@@ -873,7 +848,7 @@ def main(page:ft.Page):
         
 
         page.update()
-    
+   
     def Add_Wordlist_item(e):
         
         Wordlist_Announcement.visible = False
@@ -904,6 +879,9 @@ def main(page:ft.Page):
                         border_radius=15
                     )
                 )
+                Keyword_list.append(
+                    {"word":Converted_line.value,"trans":Translated_line.value}
+                )
                 print("2")
                 db.commit()
             except sqlite3.Error as error:
@@ -913,22 +891,23 @@ def main(page:ft.Page):
     Word_field = ft.TextField(width=300,hint_text="New Word")
     Converted_line = ft.Text(visible=False)
     Translated_line = ft.Text(visible=False)
+    lang_list = GoogleTranslator().get_supported_languages(as_dict=False)
     Language_convert = ft.Dropdown(
             options=[
                 ft.dropdown.Option("vietnamese"),
                 ft.dropdown.Option("english"),
                 ft.dropdown.Option("russian"),
-                ft.dropdown.Option("chinese (traditional)")
+                ft.dropdown.Option("chinese (traditional)"),
+                ft.dropdown.Option("french"),
             ],
             width=180,
             text_size=12
         )
-    languages = ''' SELECT * FROM langs'''
-    cursor.execute(languages)
-    for obj in cursor.fetchall():
+    for lang in lang_list:
         Language_convert.options.append(
-            ft.dropdown.Option(f"{obj[1]}")
+            ft.dropdown.Option(f"{lang}")
         )
+    
     Submit_word = ft.IconButton(ft.icons.TRANSLATE,icon_color="white",bgcolor="grey",
                                 icon_size=30,on_click=New_word_translated)
     Translated_text_line = ft.Text(visible=False)
@@ -1018,39 +997,47 @@ def main(page:ft.Page):
                 print(error)
         page.update()
     
-    # Language_Speech = ft.Dropdown(
-    #         options=[
-    #             ft.dropdown.Option("Vietnamese"),
-    #             ft.dropdown.Option("English"),
-    #             ft.dropdown.Option("Russian"),
-    #             ft.dropdown.Option("Chinese"),
-    #             ft.dropdown.Option("French"),
-    #             ft.dropdown.Option("Spanish")
-    #         ],
-    #         width=180,
-    #         text_size=12
-    #     )
-    # def Speech_1(e):
-    #     language_code_map = {
-    #         'English': 'en',
-    #         'Spanish': 'es',
-    #         'French': 'fr',
-    #         'German': 'de',
-    #         'Chinese': 'zh',
-    #         'Russian':'ru'
-    #     }
-    #     langs_code = language_code_map.get(Language_Speech.value,'en')
-    #     speech = gTTS(text=Translated_line.value, lang=langs_code)
-    #     file_path = 'GetProjects.mp3'
-    #     speech.save(file_path)
-    #     playsound(file_path)
-    #     time.sleep(1)
-    #     os.remove(file_path)
-    #     page.update()
 
-    
 
+    Keyword_list = []
     
+    cursor.execute("SELECT * FROM word")
+    try:
+        for kw in cursor.fetchall():
+            Keyword_list.append(
+                {"word":kw[1],"trans":kw[2]}
+            )
+        db.commit()
+    except Exception as error:
+        print(error)
+
+    def Search_keyword_result(e):
+        
+        Wordlist.controls.clear()
+        for result in Keyword_list:
+            if Search_keyword.value in result['word'] or Search_keyword.value in result['trans']:
+                Wordlist.controls.append(
+                    ft.Container(
+                            ft.Row(
+                                [
+                                    ft.Text(value=f"{result['word']} : {result['trans']}",color="white",width=250),
+                                    # ft.IconButton(ft.icons.VOLUME_DOWN,icon_color="blue",on_click=Speech_1)
+                                ],
+                                
+                            ),
+                            height=60,
+                            width=340,
+                            bgcolor="black",
+                            padding=15,
+                            border_radius=15
+                        )
+                )
+            elif Search_keyword.value == "":
+                Display_wordlist_item(e)
+        page.update()
+    Search_keyword = ft.TextField(width=350,border_radius=30,border_color="grey",on_change=Search_keyword_result,
+                                prefix_icon=ft.icons.SEARCH,hint_text="Search...")
+            
     page_1 = ft.Container(
         ft.Column(
             [
@@ -1064,12 +1051,10 @@ def main(page:ft.Page):
             [
                 ft.Row(
                     [
-                        ft.Text("Saved - Noted",size=20),
-                        
+                        Search_keyword
                     ],
                     alignment=ft.MainAxisAlignment.CENTER
-                ),
-                ft.Divider(color="grey"),
+                ),                
                 ft.Column(
                     [
                         ft.Row(
@@ -1107,8 +1092,6 @@ def main(page:ft.Page):
                     alignment=ft.MainAxisAlignment.CENTER
                 ),
                 ft.Divider(color="grey"),
-                
-                Language_layout,
                 Theme_layout,
                 Storage_layout,
                 Reboot_layout
@@ -1142,7 +1125,8 @@ def main(page:ft.Page):
                     Add_Form,
                     Warning,
                 ],
-                Display_wordlist_item(e)
+                Display_wordlist_item(e),
+                
             )
         )
         
@@ -1175,8 +1159,8 @@ def main(page:ft.Page):
     page.window_width = 380
     page.window_height = 830
     page.on_resize = False
-    page.window_resizable = False
-    page.window_resizable = False
+    page.window.resizable = False
+  
     page.update()
 
 if __name__ == "__main__":
