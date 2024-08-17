@@ -54,7 +54,7 @@ jobs:
         
     - name: Download Icon
       run: |
-        wget https://github.com/Mercenarya/TransGram/blob/main/icon.png -O ./icon.png
+        flet pack main.py --icon https://github.com/Mercenarya/TransGram/blob/main/icon.png
           
     - name: Flet Build APK
       run: |
