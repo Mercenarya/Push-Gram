@@ -5,8 +5,7 @@ from deep_translator import GoogleTranslator
 import time
 # from gtts import gTTS
 # from playsound import playsound
-import os
-import asyncio
+import datetime
 
 
 
@@ -71,11 +70,37 @@ class Note(ft.Column):
         )
 
 
-        self.Display_title = ft.Text(value=self.title, color="white", size=20,weight="bold")
+        self.Display_title = ft.Text(value=self.title, color="white", size=13,weight="bold",width=200)
         self.Display_text = ft.Text(value=self.Text,color="white",size=15)
         self.Edit_text = ft.TextField(value=self.Display_text.value,border_color="grey",
                                       color="white",text_size=15,multiline=True)
         
+
+        self.Copy_clipboard = ft.IconButton(ft.icons.CONTENT_COPY,on_click=self.Copy_to_clipboard,
+                                            icon_color="lightblue",)
+
+        self.Copied_Annoucement = ft.SnackBar(
+            content=ft.Text("Copied !!!")
+        )
+
+        self.Deleted_Annoucement = ft.SnackBar(
+            content=ft.Text("Post Deleted !!!")
+        )
+        
+        #this mode will activate if title have filled with a link code
+        #Allow user store and access the original link to find the pure-prototype (post)
+
+        self.Open_link = ft.Text(
+            spans=[
+                ft.TextSpan(
+                    "open link",
+                    ft.TextStyle(decoration=ft.TextDecoration.UNDERLINE,color="white"),
+                    url=f"{self.Display_title.value}",
+                )
+            ]
+        )
+
+
         self.trans_text = ft.Text(color="white",size=15)
 
         self.Textline = ft.Container(
@@ -136,12 +161,17 @@ class Note(ft.Column):
 
 
 
-
-
         self.Display_Note = ft.Container(
             ft.Column(
                 [
-                    self.Display_title,
+                    ft.Row(
+                        [
+                            self.Display_title,
+                            self.Open_link,
+                        ],
+                        alignment="spacebetween"
+                    ),
+                    
                     self.Textline,
                     ft.Row(
                         [
@@ -152,7 +182,6 @@ class Note(ft.Column):
                     )
                 ]
             ),
-            
             width=450,
             bgcolor="black",
             padding=20,
@@ -165,7 +194,13 @@ class Note(ft.Column):
         self.Edit_Note_text = ft.Container(
             ft.Column(
                 [
-                    self.Display_title,
+                    ft.Row(
+                        [
+                            self.Display_title,
+                            self.Open_link,
+                        ],
+                        alignment="spacebetween"
+                    ),
                     self.Edit_Textline,
                     ft.Row(
                         [
@@ -187,11 +222,16 @@ class Note(ft.Column):
         self.Keyword_Search = ft.Container(
             ft.Column(
                 [
-                    self.Display_title,
+                    ft.Row(
+                        [
+                            self.Display_title,
+                            self.Open_link,
+                        ],
+                        alignment="spacebetween"
+                    ),
                     self.Trans_Textline,
                     ft.Column(
-                        [
-                            
+                        [  
                             ft.Row(
                                 [   
                                     ft.ElevatedButton("Trans",color="white",bgcolor="grey",on_click=self.Keyword_trans,
@@ -238,20 +278,39 @@ class Note(ft.Column):
             border = ft.border.BorderSide(1,"grey"),
             border_radius=15,
         )
-        
+        self.controls = [self.Display_Note, self.Edit_Note_text,self.Keyword_Search,self.Copied_Annoucement,self.Deleted_Annoucement]
 
-        self.controls = [self.Display_Note, self.Edit_Note_text, self.Keyword_Search]
+
+    def Open_copied_announcement(self, e):
+        self.Copied_Annoucement.open = True
+        self.update()
+
+    def Open_deleted_announcement(self, e):
+        self.Deleted_Annoucement.open = True
+        self.update()
+
+    def Copy_to_clipboard(self, e):
+        self.page.set_clipboard(self.translated_text.value)
+        self.Open_copied_announcement(e)
+        self.update()
 
     def Delete_note(self, e):
-        
         Remove_Note = f''' DELETE FROM note WHERE title = '{self.Display_title.value}' '''
+        self.Open_deleted_announcement(e)
         try:
             cursor.execute(Remove_Note)
-            print("Note Removed")
             db.commit()
         except sqlite3.Error as error:
             print(error)
         self.Delete(self)
+    
+    #Throw result when user assign a new title
+    def Check_open_link(self, e):
+        if "https://" in self.Display_title.value:
+            self.Open_link.visible = True
+        else:
+            self.Open_link.visible = False
+        self.update()
 
     def Edit_Note(self, e):
         self.Display_Note.visible = False
@@ -292,7 +351,13 @@ class Note(ft.Column):
             self.Translated.controls.append(
                 ft.Column(
                     [
-                        ft.Text(value=self.Translator.value,color="white",size=20,weight="bold"),
+                        ft.Row(
+                            [
+                                ft.Text(value=self.Translator.value,color="white",size=20,weight="bold"),
+                                self.Copy_clipboard,
+                            ],
+                            alignment="spacebetween"
+                        ),
                         self.translated_text
                     ]
                 )
@@ -318,7 +383,8 @@ class Note(ft.Column):
         self.Display_Note.visible = True
         self.Display_text.color = "white"
         self.update()
-        
+    
+    
         
 
 class NotedApp(ft.Column):
@@ -326,9 +392,9 @@ class NotedApp(ft.Column):
         super().__init__()
         
 
-        self.Note_title = ft.TextField(width=400,border_color="white",hint_text="Tittle...",
+        self.Note_title = ft.TextField(width=400,border_color="white",hint_text="Title",
                                        color="white",hint_style=ft.TextStyle(color="white"))
-        self.Note_textField = ft.TextField(value="",width=400,border_color="black",hint_text="TextLine...",
+        self.Note_textField = ft.TextField(value="",width=400,border_color="black",hint_text="Textline...",
                                            multiline=True,hint_style=ft.TextStyle(color="white"),
                                            min_lines=1,max_lines=4,color="white")
         
@@ -339,24 +405,16 @@ class NotedApp(ft.Column):
             height=140,
             border=ft.border.all(1,"white")
         )
-        self.banner = ft.Row(
-            [
-                ft.Text("copyright by russianb_0 - Cuu Vang Long Do Group Ⓒ",size=10,color="grey")
-            ],
-            alignment=ft.MainAxisAlignment.CENTER
-        )
         self.Note_list = ft.Column(
             [
-                self.banner
+                
             ],
-            height=650,
+            height=655,
             scroll=ft.ScrollMode.HIDDEN
         )
 
         self.OpenNoteBar = ft.Container(width=100,height=10,bgcolor="grey",on_click=self.Note_TopBar_Open,visible=True)
         self.CloseNoteBar = ft.Container(width=100,height=10,bgcolor="grey",on_click=self.Note_TopBar_close,visible=False)
-
-
 
     
         cursor.execute("SELECT * FROM note")
@@ -370,7 +428,18 @@ class NotedApp(ft.Column):
         
         self.Search_field = ft.TextField(bgcolor=None,width=300,border_color="white",border_radius=30,prefix_icon=ft.icons.SEARCH,
                                          color="white",on_change=self.Search_Result)
-        
+        self.Dialog_post = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Warning"),
+            content=ft.Text("Cannot append this form to stack"),
+            actions=[
+                ft.TextButton("Got it", on_click=self.Close_Dialog),
+            ],
+            actions_alignment=ft.MainAxisAlignment.CENTER,
+        )
+        self.New_Post_annoucement = ft.SnackBar(
+            content=ft.Text("new post released !!!")
+        )
 
         self.NoteSearchBar = ft.Container(
                 ft.Column(
@@ -415,7 +484,7 @@ class NotedApp(ft.Column):
                         
                         ft.Row(
                             [
-                                ft.IconButton(ft.icons.TELEGRAM,icon_color="white",on_click= self.Telegram_application ),
+                                ft.IconButton(ft.icons.TELEGRAM,icon_color="white",on_click=None ),
                                 ft.Text("PushGram",color="white",size=25,weight="bold"),
                                 ft.IconButton(ft.icons.SEARCH,icon_color="white",on_click=self.Search_post)
                                 
@@ -424,7 +493,6 @@ class NotedApp(ft.Column):
                         ),
                         
                         self.Note_title,
-                        # self.Note_textField,
                         self.Field_Pad,
                         ft.Row(
                             [
@@ -468,7 +536,8 @@ class NotedApp(ft.Column):
                 alignment=ft.MainAxisAlignment.CENTER
             ),
             self.Note_list,
-            
+            self.Dialog_post,
+            self.New_Post_annoucement
             
         ]
         
@@ -491,29 +560,31 @@ class NotedApp(ft.Column):
                 self.Note_list.controls.append(
                     Note(part['title'],part['content'], self.Delete_note)
                 )
-
-
-
+        self.update()
+    def Close_Dialog(self,e):
+        self.Dialog_post.open = False
         self.update()
 
-    def Telegram_application(self, e):
-        self.url = "https://web.telegram.org/"
-        self.update()
     def Add_note(self, e):
         note = Note(self.Note_title.value,self.Note_textField.value, self.Delete_note)
         self.Search_List.append( {"title":self.Note_title.value,"content":self.Note_textField.value})
-        print(self.Search_List)
         index_tub = [self.Note_title.value, self.Note_textField.value]
         Query_index = '''INSERT INTO note (title, textiled) VALUES (?,?)'''
         try:
-            cursor.execute(Query_index,index_tub)
-            print("New Note Added")
+            if self.Note_title.value == "" or self.Note_textField.value == "":
+                self.Dialog_post.open = True
+            elif self.Note_title.value == "" and self.Note_textField.value == "":
+                self.Dialog_post.open = True
+            else:
+                cursor.execute(Query_index,index_tub)
+                self.Note_title.value = ""
+                self.Note_textField.value = ""
+                self.Note_list.controls.append(note)
+                self.New_Post_annoucement.open = True
             db.commit()
         except sqlite3.Error as error:
             print(error)
         
-        self.Note_list.controls.append(note)
-        self.Note_textField.value = "\n\n\n"
         self.update()
 
     def Search_post(self,e):
@@ -526,6 +597,7 @@ class NotedApp(ft.Column):
         self.NoteSearchBar.visible = False
         self.Note_list.controls.clear()
         cursor.execute("SELECT * FROM note")
+
         for objn in cursor.fetchall():
             self.Note_list.controls.append(
                 Note(objn[0],objn[1],self.Delete_note)
@@ -685,7 +757,7 @@ def main(page:ft.Page):
     open_theme_button = ft. IconButton(ft.icons.ARROW_RIGHT,visible=True,
                                           icon_color="white",icon_size=30,
                                           on_click=Open_theme_setting_layout)
-    close_theme_button = ft. IconButton(ft.icons.ARROW_LEFT,visible=False,
+    close_theme_button = ft. IconButton(ft.icons.ARROW_DROP_DOWN,visible=False,
                                            icon_color="white",icon_size=30,
                                            on_click=close_theme_setting_layout)
     
@@ -695,7 +767,7 @@ def main(page:ft.Page):
     open_storage_button = ft. IconButton(ft.icons.ARROW_RIGHT,visible=True,
                                           icon_color="white",icon_size=30,
                                           on_click=Open_storage_setting_layout)
-    close_storage_button = ft. IconButton(ft.icons.ARROW_LEFT,visible=False,
+    close_storage_button = ft. IconButton(ft.icons.ARROW_DROP_DOWN,visible=False,
                                            icon_color="white",icon_size=30,
                                            on_click=close_storage_setting_layout)
 
@@ -806,6 +878,7 @@ def main(page:ft.Page):
     TEXTLINE, ESPECIALLY, IT'S CAN HEP USER NOTED ALL TRANSLATED WORD - FORMAL WORD
     AS A LANGUAGE DICTIONARY
     '''
+
     #Second page
     def Open_Warning(e):
         Warning.open = True
@@ -1034,6 +1107,7 @@ def main(page:ft.Page):
                 )
             elif Search_keyword.value == "":
                 Display_wordlist_item(e)
+
         page.update()
     Search_keyword = ft.TextField(width=350,border_radius=30,border_color="grey",on_change=Search_keyword_result,
                                 prefix_icon=ft.icons.SEARCH,hint_text="Search...")
