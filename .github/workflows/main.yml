@@ -1,4 +1,4 @@
-name: IPA Build
+name: APK Build
 
 on:
   # Runs on push to any of the below branches
@@ -24,7 +24,7 @@ env:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
@@ -45,15 +45,21 @@ jobs:
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
 
-    - name: Flet Build IPA
-      run: |
-        flutter config --no-analytics
-        flet build ipa --verbose --build-number=$BUILD_NUMBER --build-version=$BUILD_VERSION
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4.2.1
+      with:
+        distribution: 'temurin' # See https://github.com/marketplace/actions/setup-java-jdk#supported-distributions for available options
+        java-version: '21'
 
-    - name: Upload IPA Artifact
+    - name: Flet Build APK
+      run: |
+        flutter config --no-analytics # disable flutter analytics
+        flet build apk --verbose    # adapt the command to your needs - https://flet.dev/docs/publish 
+
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4.3.4  # https://github.com/marketplace/actions/upload-a-build-artifact
       with:
-        name: ipa-build-artifact  # the name of the artifact
-        path: build/ipa  # location of Flet build output
+        name: apk-build-artifact  # the name of the artifact
+        path: build/apk  # location of Flet build output
         if-no-files-found: error  # Fail the action with an error message if no files are found
         overwrite: false  # If true, an artifact with a matching name will be deleted before a new one is uploaded. If false, the action will fail if an artifact for the given name already exists. Does not fail if the artifact does not exist.
