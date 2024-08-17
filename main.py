@@ -3,9 +3,6 @@ import sqlite3
 from flet import View
 from deep_translator import GoogleTranslator
 import time
-# from gtts import gTTS
-# from playsound import playsound
-import datetime
 
 
 
@@ -64,7 +61,7 @@ class Note(ft.Column):
         )
 
         self.Translated = ft.Column(
-            width=500,
+            # width=500,
             scroll=ft.ScrollMode.HIDDEN,
             visible=False
         )
@@ -114,7 +111,7 @@ class Note(ft.Column):
             ),
             
             height=300,
-            width=400,
+            # width=400,
             bgcolor="Grey",
             padding=20,
             border_radius=15
@@ -126,13 +123,13 @@ class Note(ft.Column):
                 [
                     self.Edit_text
                 ],
-                width=400,
+                # width=400,
                 height=300,
                 scroll=ft.ScrollMode.HIDDEN,
             ),
             
             height=300,
-            width=400,
+            # width=400,
             bgcolor="Grey",
             padding=15,
             border = ft.border.BorderSide(1,"grey"),
@@ -145,13 +142,13 @@ class Note(ft.Column):
                 [
                     self.trans_text
                 ],
-                width=400,
+                # width=400,
                 height=300,
                 scroll=ft.ScrollMode.HIDDEN,
             ),
             
             height=300,
-            width=400,
+            # width=400,
             bgcolor="Grey",
             padding=15,
             border = ft.border.BorderSide(1,"grey"),
@@ -182,7 +179,7 @@ class Note(ft.Column):
                     )
                 ]
             ),
-            width=450,
+            # width=450,
             bgcolor="black",
             padding=20,
             height=450,
@@ -211,7 +208,7 @@ class Note(ft.Column):
                 ]
             ),
             
-            width=450,
+            # width=450,
             bgcolor="black",
             padding=20,
             height=450,
@@ -259,7 +256,7 @@ class Note(ft.Column):
                             )
 
                         ],
-                        width=520,
+                        # width=520,
                         scroll=ft.ScrollMode.HIDDEN
                         
                     )
@@ -270,7 +267,7 @@ class Note(ft.Column):
                
             ),
             
-            width=450,
+            # width=450,
             bgcolor="black",
             padding=20,
             height=600,
@@ -466,7 +463,6 @@ class NotedApp(ft.Column):
                 bottom=25
             ),
             bgcolor="black",
-            width=400,
             height=59,
             padding=10,
             shadow= ft.BoxShadow(
@@ -492,8 +488,17 @@ class NotedApp(ft.Column):
                             alignment="spaceBetween",
                         ),
                         
-                        self.Note_title,
-                        self.Field_Pad,
+                        ft.Row(
+                            [
+                                ft.Column(
+                                    [
+                                        self.Note_title,
+                                        self.Field_Pad,
+                                    ]
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER
+                        ),
                         ft.Row(
                             [
                                 ft.FloatingActionButton(
@@ -513,7 +518,7 @@ class NotedApp(ft.Column):
                 bottom=25
             ),
             bgcolor="black",
-            width=400,
+            # width=400,
             height=59,
             padding=10,
             shadow= ft.BoxShadow(
@@ -807,7 +812,7 @@ def main(page:ft.Page):
             ]
         ),
         height=80,
-        width=450,
+        # width=450,
         bgcolor="black",
         border_radius=20,
         padding=15,
@@ -845,7 +850,7 @@ def main(page:ft.Page):
             ]
         ),
         height=80,
-        width=450,
+        # width=450,
         bgcolor="black",
         border_radius=20,
         padding=15,
@@ -865,7 +870,7 @@ def main(page:ft.Page):
             alignment="spacebetween"
         ),
         height=80,
-        width=450,
+        # width=450,
         bgcolor="black",
         border_radius=20,
         padding=15,
@@ -1224,16 +1229,11 @@ def main(page:ft.Page):
     page.on_view_pop = view_pop
     page.go(page.route)
     page.add(new_lans_anounce,deleted_langs_anounce,deleted_text_anounce,deleted_word_anounce)
-    page.window_width = 380
-    page.window_resizable = False
-    page.on_resize = False
-    page.update()
     page.theme_mode = ft.ThemeMode.LIGHT
-
     page.window_width = 380
-    page.window_height = 830
-    page.on_resize = False
-    page.window.resizable = False
+    page.window.height = 830
+    page.update()
+   
   
     page.update()
 
