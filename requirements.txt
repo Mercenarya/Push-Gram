@@ -1,3 +1,2 @@
 flet
 deep_translator
-PyInstaller
