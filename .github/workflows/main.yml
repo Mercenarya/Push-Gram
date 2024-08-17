@@ -51,11 +51,18 @@ jobs:
         distribution: 'temurin' # See https://github.com/marketplace/actions/setup-java-jdk#supported-distributions for available options
         java-version: '21'
 
+        
+    - name: Download Icon
+      run: |
+        wget https://github.com/Mercenarya/TransGram/blob/main/icon.png -O ./icon.png
+          
     - name: Flet Build APK
       run: |
         flutter config --no-analytics # disable flutter analytics
         flet build apk --verbose    # adapt the command to your needs - https://flet.dev/docs/publish 
-
+        
+    
+          
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4.3.4  # https://github.com/marketplace/actions/upload-a-build-artifact
       with:
