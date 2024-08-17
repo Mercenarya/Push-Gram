@@ -50,11 +50,6 @@ jobs:
       with:
         distribution: 'temurin' # See https://github.com/marketplace/actions/setup-java-jdk#supported-distributions for available options
         java-version: '21'
-
-        
-    - name: Download Icon
-      run: |
-        flet pack main.py --icon https://github.com/Mercenarya/TransGram/blob/main/icon.png
           
     - name: Flet Build APK
       run: |
