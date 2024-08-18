@@ -510,7 +510,7 @@ class NotedApp(ft.Column):
                 bottom=25
             ),
             bgcolor="black",
-            width=400,
+            # width=400,
             height=59,
             padding=10,
             shadow= ft.BoxShadow(
