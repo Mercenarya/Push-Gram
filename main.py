@@ -111,7 +111,7 @@ class Note(ft.Column):
             ),
             
             height=300,
-            # width=400,
+            width=2000,
             bgcolor="Grey",
             padding=20,
             border_radius=15
@@ -123,13 +123,13 @@ class Note(ft.Column):
                 [
                     self.Edit_text
                 ],
-                # width=400,
+                width=2000,
                 height=300,
                 scroll=ft.ScrollMode.HIDDEN,
             ),
             
             height=300,
-            # width=400,
+            width=2000,
             bgcolor="Grey",
             padding=15,
             border = ft.border.BorderSide(1,"grey"),
@@ -148,7 +148,7 @@ class Note(ft.Column):
             ),
             
             height=300,
-            # width=400,
+            width=2000,
             bgcolor="Grey",
             padding=15,
             border = ft.border.BorderSide(1,"grey"),
@@ -510,7 +510,7 @@ class NotedApp(ft.Column):
                 bottom=25
             ),
             bgcolor="black",
-            # width=400,
+            width=400,
             height=59,
             padding=10,
             shadow= ft.BoxShadow(
