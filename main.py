@@ -389,16 +389,16 @@ class NotedApp(ft.Column):
         super().__init__()
         
 
-        self.Note_title = ft.TextField(width=400,border_color="white",hint_text="Title",
+        self.Note_title = ft.TextField(border_color="white",hint_text="Title",
                                        color="white",hint_style=ft.TextStyle(color="white"))
-        self.Note_textField = ft.TextField(value="",width=400,border_color="black",hint_text="Textline...",
+        self.Note_textField = ft.TextField(value="",border_color="black",hint_text="Textline...",
                                            multiline=True,hint_style=ft.TextStyle(color="white"),
                                            min_lines=1,max_lines=4,color="white")
         
 
         self.Field_Pad = ft.Container(
             self.Note_textField,
-            width=400,
+            # width=400,
             height=140,
             border=ft.border.all(1,"white")
         )
@@ -488,17 +488,9 @@ class NotedApp(ft.Column):
                             alignment="spaceBetween",
                         ),
                         
-                        ft.Row(
-                            [
-                                ft.Column(
-                                    [
-                                        self.Note_title,
-                                        self.Field_Pad,
-                                    ]
-                                ),
-                            ],
-                            alignment=ft.MainAxisAlignment.CENTER
-                        ),
+                        self.Note_title,
+                        self.Field_Pad,
+                        
                         ft.Row(
                             [
                                 ft.FloatingActionButton(
