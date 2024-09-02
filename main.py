@@ -2,7 +2,6 @@ import flet as ft
 import sqlite3
 from flet import View
 from deep_translator import GoogleTranslator
-import urllib3
 import time
 import random
 
@@ -15,10 +14,6 @@ cursor = db.cursor()
 
 #Test connection
 
-
-
-
-        
 
 class Note(ft.Column):
     def __init__(self,Title,Text,Delete):
@@ -103,9 +98,9 @@ class Note(ft.Column):
                         weight="bold",
                         color="white",
                         size=15,
-                        width=200
+                        width=150
                     ),
-                    ft.TextButton("Open",on_click=self.Open_Note_Box)
+                    ft.TextButton("Open",on_click=self.Open_Note_Box,style=ft.ButtonStyle(color="white"))
                 ],
                 alignment='spacebetween'
             ),
@@ -174,7 +169,7 @@ class Note(ft.Column):
             
         )
 
-        self.Back_to_box_btn = ft.TextButton("Close", on_click=self.Back_to_box)
+        self.Back_to_box_btn = ft.TextButton("Close", on_click=self.Back_to_box,style=ft.ButtonStyle(color="white"))
 
         self.Display_Note = ft.Container(
             ft.Column(
@@ -201,7 +196,7 @@ class Note(ft.Column):
             # width=450,
             bgcolor="black",
             padding=20,
-            height=420,
+            height=450,
             border = ft.border.BorderSide(1,"grey"),
             border_radius=15,
             visible=False
@@ -232,7 +227,7 @@ class Note(ft.Column):
             # width=450,
             bgcolor="black",
             padding=20,
-            height=420,
+            height=450,
             visible=False,
             border = ft.border.BorderSide(1,"grey"),
             border_radius=15
@@ -679,24 +674,7 @@ class NotedApp(ft.Column):
         self.NoteSearchBar.height = 59 if self.NoteSearchBar.height == 150 else 150
         self.NoteBar.height = 59 if self.NoteBar.height == 360 else 360
         self.update()
-    
 
-def Check_connection(page:ft.Page):
-    page.add(
-        ft.Container(
-            ft.Column(
-                [
-                    ft.Icon(name=ft.icons.SIGNAL_WIFI_CONNECTED_NO_INTERNET_4_SHARP,size=100,color="white"),
-                    ft.Text("Connection Interrupted",size=10,color="White")
-                ]
-            ),
-            padding=ft.padding.only(top=200,left=120,right=100)
-        )
-    )
-    page.theme_mode = ft.ThemeMode.LIGHT
-    page.window_width = 380
-    page.window.height = 830
-    page.update()
 
 
 
@@ -1373,7 +1351,7 @@ def main(page:ft.Page):
                 )
                 
             ],
-            height=805,
+            height=810,
             scroll=ft.ScrollMode.HIDDEN,
             
         ),
@@ -1438,11 +1416,5 @@ def main(page:ft.Page):
     page.update()
 
 if __name__ == "__main__":
-    try:
-        resp = urllib3.request("Get",'https://www.google.com',timeout=2.0)
-        Status = resp.status
-        resp.release_conn()
-        if Status == 200:
-            ft.app(target=main,assets_dir='assets')
-    except:
-        ft.app(target=Check_connection,assets_dir='assets')
+    ft.app(target=main,assets_dir='assets')
+   
