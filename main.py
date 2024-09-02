@@ -100,7 +100,7 @@ class Note(ft.Column):
                         size=15,
                         width=150
                     ),
-                    ft.TextButton("Open",on_click=self.Open_Note_Box,style=ft.ButtonStyle(color="white"))
+                    ft.ElevatedButton("Open",color="white",bgcolor="black",on_click=self.Open_Note_Box)
                 ],
                 alignment='spacebetween'
             ),
