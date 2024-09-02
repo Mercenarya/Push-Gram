@@ -1,2 +1,3 @@
 flet
 deep_translator
+urllib3
