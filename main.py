@@ -2,7 +2,9 @@ import flet as ft
 import sqlite3
 from flet import View
 from deep_translator import GoogleTranslator
+import urllib3
 import time
+import random
 
 
 
@@ -24,8 +26,6 @@ class Note(ft.Column):
         self.title = Title
         self.Text = Text
         self.Delete = Delete
-        
-        
         self.Language = ft.TextField(width=100,border_color="white",color="white",text_size=15,height=50,border_radius=20)
         
         self.Translator = ft.Dropdown(
@@ -61,7 +61,6 @@ class Note(ft.Column):
         )
 
         self.Translated = ft.Column(
-            # width=500,
             scroll=ft.ScrollMode.HIDDEN,
             visible=False
         )
@@ -96,7 +95,26 @@ class Note(ft.Column):
                 )
             ]
         )
-
+        self.BoxText = ft.Container(
+            ft.Row(
+                [
+                    ft.Text(
+                        f"{self.Display_title.value}",
+                        weight="bold",
+                        color="white",
+                        size=15,
+                        width=200
+                    ),
+                    ft.TextButton("Open",on_click=self.Open_Note_Box)
+                ],
+                alignment='spacebetween'
+            ),
+            padding=20,
+            height=60,
+            bgcolor="black",
+            border_radius=20,
+            margin=ft.margin.only(bottom=-20)
+        )
 
         self.trans_text = ft.Text(color="white",size=15)
 
@@ -156,14 +174,14 @@ class Note(ft.Column):
             
         )
 
-
+        self.Back_to_box_btn = ft.TextButton("Close", on_click=self.Back_to_box)
 
         self.Display_Note = ft.Container(
             ft.Column(
                 [
                     ft.Row(
                         [
-                            self.Display_title,
+                            self.Back_to_box_btn,
                             self.Open_link,
                         ],
                         alignment="spacebetween"
@@ -175,16 +193,18 @@ class Note(ft.Column):
                             ft.ElevatedButton("Delete",bgcolor="grey",color="white",on_click=self.Delete_note),
                             ft.ElevatedButton("Edit",bgcolor="Grey",color="white",on_click=self.Edit_Note),
                             ft.ElevatedButton("Translate",bgcolor="grey",color="white",on_click=self.keyword_Note)
-                        ]
+                        ],
+                        alignment = ft.MainAxisAlignment.CENTER
                     )
                 ]
             ),
             # width=450,
             bgcolor="black",
             padding=20,
-            height=450,
+            height=420,
             border = ft.border.BorderSide(1,"grey"),
-            border_radius=15
+            border_radius=15,
+            visible=False
             
         )
 
@@ -193,7 +213,7 @@ class Note(ft.Column):
                 [
                     ft.Row(
                         [
-                            self.Display_title,
+                            self.Back_to_box_btn,
                             self.Open_link,
                         ],
                         alignment="spacebetween"
@@ -203,7 +223,8 @@ class Note(ft.Column):
                         [
                             ft.ElevatedButton("Delete",bgcolor="grey",color="white",on_click=self.Delete_note),
                             ft.ElevatedButton("Save",bgcolor="grey",color="white",on_click=self.Save_Note)
-                        ]
+                        ],
+                        alignment = ft.MainAxisAlignment.CENTER
                     )
                 ]
             ),
@@ -211,7 +232,7 @@ class Note(ft.Column):
             # width=450,
             bgcolor="black",
             padding=20,
-            height=450,
+            height=420,
             visible=False,
             border = ft.border.BorderSide(1,"grey"),
             border_radius=15
@@ -221,7 +242,7 @@ class Note(ft.Column):
                 [
                     ft.Row(
                         [
-                            self.Display_title,
+                            self.Back_to_box_btn,
                             self.Open_link,
                         ],
                         alignment="spacebetween"
@@ -266,7 +287,6 @@ class Note(ft.Column):
                 
                
             ),
-            
             # width=450,
             bgcolor="black",
             padding=20,
@@ -275,7 +295,7 @@ class Note(ft.Column):
             border = ft.border.BorderSide(1,"grey"),
             border_radius=15,
         )
-        self.controls = [self.Display_Note, self.Edit_Note_text,self.Keyword_Search,self.Copied_Annoucement,self.Deleted_Annoucement]
+        self.controls = [self.Display_Note,self.BoxText, self.Edit_Note_text,self.Keyword_Search,self.Copied_Annoucement,self.Deleted_Annoucement]
 
 
     def Open_copied_announcement(self, e):
@@ -285,7 +305,8 @@ class Note(ft.Column):
     def Open_deleted_announcement(self, e):
         self.Deleted_Annoucement.open = True
         self.update()
-
+    
+        
     def Copy_to_clipboard(self, e):
         self.page.set_clipboard(self.translated_text.value)
         self.Open_copied_announcement(e)
@@ -304,9 +325,21 @@ class Note(ft.Column):
     #Throw result when user assign a new title
     def Check_open_link(self, e):
         if "https://" in self.Display_title.value:
-            self.Open_link.visible = True
-        else:
-            self.Open_link.visible = False
+            print("true")
+        if "https://" not in self.Display_title.value:
+            print("false")
+        self.update()
+        
+    def Open_Note_Box(self, e):
+        self.BoxText.visible = False
+        self.Display_Note.visible = True
+        self.update()
+    
+    def Back_to_box(self,e):
+        self.BoxText.visible = True
+        self.Display_Note.visible = False
+        self.Edit_Note_text.visible = False
+        self.Keyword_Search.visible = False
         self.update()
 
     def Edit_Note(self, e):
@@ -398,7 +431,6 @@ class NotedApp(ft.Column):
 
         self.Field_Pad = ft.Container(
             self.Note_textField,
-            # width=400,
             height=140,
             border=ft.border.all(1,"white")
         )
@@ -406,7 +438,7 @@ class NotedApp(ft.Column):
             [
                 
             ],
-            height=655,
+            height=710,
             scroll=ft.ScrollMode.HIDDEN
         )
 
@@ -431,6 +463,16 @@ class NotedApp(ft.Column):
             content=ft.Text("Cannot append this form to stack"),
             actions=[
                 ft.TextButton("Got it", on_click=self.Close_Dialog),
+            ],
+            actions_alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+        self.Dialog_post_2 = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Warning"),
+            content=ft.Text("The text titles already exist."),
+            actions=[
+                ft.TextButton("Got it", on_click=self.Close_Dialog_2),
             ],
             actions_alignment=ft.MainAxisAlignment.CENTER,
         )
@@ -494,7 +536,7 @@ class NotedApp(ft.Column):
                         ft.Row(
                             [
                                 ft.FloatingActionButton(
-                                    icon=ft.icons.ADD, on_click=self.Add_note
+                                    icon=ft.icons.ADD, on_click=self.Add_note,
                                 ),
                                 ft.FloatingActionButton(
                                     icon=ft.icons.DELETE, on_click=self.Clear_Field
@@ -534,6 +576,7 @@ class NotedApp(ft.Column):
             ),
             self.Note_list,
             self.Dialog_post,
+            self.Dialog_post_2,
             self.New_Post_annoucement
             
         ]
@@ -550,6 +593,10 @@ class NotedApp(ft.Column):
         except Exception as error:
             print(error)
 
+    def Link_random(self, e):
+        self.page.launch_url("https://shopee.vn/")
+        self.update()
+
     def Search_Result(self, e):
         self.Note_list.controls.clear()
         for part in self.Search_List:
@@ -561,8 +608,12 @@ class NotedApp(ft.Column):
     def Close_Dialog(self,e):
         self.Dialog_post.open = False
         self.update()
+    def Close_Dialog_2(self,e):
+        self.Dialog_post_2.open = False
+        self.update()
 
     def Add_note(self, e):
+        
         note = Note(self.Note_title.value,self.Note_textField.value, self.Delete_note)
         self.Search_List.append( {"title":self.Note_title.value,"content":self.Note_textField.value})
         index_tub = [self.Note_title.value, self.Note_textField.value]
@@ -574,14 +625,17 @@ class NotedApp(ft.Column):
                 self.Dialog_post.open = True
             else:
                 cursor.execute(Query_index,index_tub)
+                
                 self.Note_title.value = ""
                 self.Note_textField.value = ""
                 self.Note_list.controls.append(note)
                 self.New_Post_annoucement.open = True
             db.commit()
         except sqlite3.Error as error:
-            print(error)
-        
+            self.Dialog_post_2.open = True
+
+        time.sleep(2)
+        self.Link_random(e)
         self.update()
 
     def Search_post(self,e):
@@ -616,18 +670,34 @@ class NotedApp(ft.Column):
         self.OpenNoteBar.visible = False
         self.CloseNoteBar.visible = True
         self.NoteSearchBar.height = 150 if self.NoteSearchBar.height == 59 else 59
-        self.NoteBar.height = 350 if self.NoteBar.height == 59 else 59
+        self.NoteBar.height = 360 if self.NoteBar.height == 59 else 59
         self.update()
 
     def Note_TopBar_close(self, e):
         self.OpenNoteBar.visible = True
         self.CloseNoteBar.visible = False
         self.NoteSearchBar.height = 59 if self.NoteSearchBar.height == 150 else 150
-        self.NoteBar.height = 59 if self.NoteBar.height == 350 else 350
+        self.NoteBar.height = 59 if self.NoteBar.height == 360 else 360
         self.update()
     
 
-    
+def Check_connection(page:ft.Page):
+    page.add(
+        ft.Container(
+            ft.Column(
+                [
+                    ft.Icon(name=ft.icons.SIGNAL_WIFI_CONNECTED_NO_INTERNET_4_SHARP,size=100,color="white"),
+                    ft.Text("Connection Interrupted",size=10,color="White")
+                ]
+            ),
+            padding=ft.padding.only(top=200,left=120,right=100)
+        )
+    )
+    page.theme_mode = ft.ThemeMode.LIGHT
+    page.window_width = 380
+    page.window.height = 830
+    page.update()
+
 
 
 def main(page:ft.Page):
@@ -1106,8 +1176,11 @@ def main(page:ft.Page):
                 Display_wordlist_item(e)
 
         page.update()
-    Search_keyword = ft.TextField(width=350,border_radius=30,border_color="grey",on_change=Search_keyword_result,
-                                prefix_icon=ft.icons.SEARCH,hint_text="Search...")
+    Search_keyword = ft.Container(
+        ft.TextField(width=350,border_radius=30,border_color="grey",on_change=Search_keyword_result,
+                                prefix_icon=ft.icons.SEARCH,hint_text="Search..."),
+        margin=ft.margin.only(top=15)
+    )
             
     page_1 = ft.Container(
         ft.Column(
@@ -1134,13 +1207,16 @@ def main(page:ft.Page):
                             ],
                             alignment=ft.MainAxisAlignment.CENTER
                         ),
-                        ft.Row(
+                        ft.Container(
+                            ft.Row(
                             [
                                 # Language_Speech,
-                                Floatbutton
-                            ],
-                            alignment=ft.MainAxisAlignment.END
-                            
+                                    Floatbutton
+                                ],
+                                alignment=ft.MainAxisAlignment.END
+                                
+                            ),
+                            padding=ft.padding.only(top=40)
                         )
                     ]
                 )
@@ -1158,19 +1234,151 @@ def main(page:ft.Page):
             [
                 ft.Row(
                     [
-                        ft.Text("Settings ",size=20),
+                        ft.Text("Settings ",size=30),
                     ],
+                    
                     alignment=ft.MainAxisAlignment.CENTER
                 ),
                 ft.Divider(color="grey"),
                 Theme_layout,
                 Storage_layout,
-                Reboot_layout
+                Reboot_layout,
+                ft.Divider(),
+                ft.Container(
+                    ft.Column(
+                        [
+                            ft.Text("Application details",size=20,weight="bold"),
+                        ]
+                    ),
+                    padding=ft.padding.only(left=10)
+                ),
+                ft.Container(
+                    ft.Column(
+                        [
+                            ft.Text("Version: 0.7.12",size=20),
+                            ft.Text("SDK version: 0.4.10",size=20),
+                            ft.Text("IPA version: 0.2.2",size=20),
+
+                        ]
+                    ),
+                    padding=ft.padding.only(top=15,left=10)
+                ),
+                ft.Divider(),
+                ft.Container(
+                    ft.Column(
+                        [
+                            ft.Text("Developer details",size=20,weight="bold"),
+                        ]
+                    ),
+                    padding=ft.padding.only(left=10)
+                ),
+                ft.Container(
+                    ft.Column(
+                        [
+                            ft.Container(
+                                ft.Row(
+                                    [
+                                        ft.Icon(name=ft.icons.TELEGRAM, color="lightblue"),
+                                        ft.Text(
+                                            spans=[
+                                                ft.TextSpan(
+                                                    "russianb_0",
+                                                    ft.TextStyle(color="white"),
+                                                    url= random.choice(['https://t.me/russianb_0'])
+                                                    
+                                                )
+                                            ]
+                                        )
+                                    ]
+                                ),
+                                padding=10,
+                                border_radius=30,
+                                bgcolor="black"
+                            ),
+                            ft.Container(
+                                ft.Row(
+                                    [
+                                        ft.Icon(name=ft.icons.EMAIL, color="red"),
+                                        ft.Text(
+                                            spans=[
+                                                ft.TextSpan(
+                                                    "mtranquoc77@gmail.com",
+                                                    ft.TextStyle(color="white"),
+                                                    url="https://www.mtranquoc77@gmail.com",
+                                                )
+                                            ]
+                                        )
+                                    ]
+                                ),
+                                padding=10,
+                                border_radius=30,
+                                bgcolor="black"
+                                
+                            )
+                        ]
+                    ),
+                    padding=ft.padding.only(top=15,left=5)
+                ),
+                ft.Divider(),
+                ft.Container(
+                    ft.Column(
+                        [
+                            ft.Text("Come join us",size=20,weight="bold"),
+                        ]
+                    ),
+                    padding=ft.padding.only(left=10)
+                ),
+                ft.Container(
+                    ft.Row(
+                        [
+                            ft.Icon(name=ft.icons.TELEGRAM, color="lightblue",size=40),
+                            ft.Text(
+                                spans=[
+                                    ft.TextSpan(
+                                        "t.me/puzlevn",
+                                        ft.TextStyle(color="white"),
+                                        url="https://t.me/puzlevn",
+                                    )
+                                ]
+                            )
+                        ]
+                    ),
+                    padding=10,
+                    border_radius=30,
+                    bgcolor="black",
+                    height=60
+                    
+                ),
+                ft.Container(
+                    ft.Row(
+                        [
+                            ft.Icon(name=ft.icons.TIKTOK_OUTLINED, color="white",size=40),
+                            ft.Text(
+                                spans=[
+                                    ft.TextSpan(
+                                        "www.tiktok.com/@puzlevn",
+                                        ft.TextStyle(color="white"),
+                                        url="https://www.tiktok.com/@puzlevn",
+                                    )
+                                ]
+                            )
+                        ]
+                    ),
+                    padding=10,
+                    border_radius=30,
+                    bgcolor="black",
+                    height=60,
+                    margin=ft.margin.only(bottom=10)
+                    
+                )
                 
             ],
-            scroll=ft.ScrollMode.ALWAYS
+            height=805,
+            scroll=ft.ScrollMode.HIDDEN,
+            
         ),
-        visible=False
+        visible=False,
+        
     )
 
 
@@ -1230,4 +1438,11 @@ def main(page:ft.Page):
     page.update()
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    try:
+        resp = urllib3.request("Get",'https://www.google.com',timeout=2.0)
+        Status = resp.status
+        resp.release_conn()
+        if Status == 200:
+            ft.app(target=main,assets_dir='assets')
+    except:
+        ft.app(target=Check_connection,assets_dir='assets')
